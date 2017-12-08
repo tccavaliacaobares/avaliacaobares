@@ -1,0 +1,29 @@
+<ion-modal-view>
+    <ion-header-bar>
+        <h1 class="title">Login</h1>
+        <div class="buttons">
+            <button class="button button-clear" ng-click="closeLogin()">Close</button>
+        </div>
+    </ion-header-bar>
+    <ion-content>
+        <div>
+            <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
+        </div>
+        <h1 style="text-align: center;">Sistema de Avaliação de Bares</h1>
+        <form ng-submit="loginFirebase()">
+            <div class="list">
+                <label class="item item-input">
+                    <span class="input-label">Usuário</span>
+                    <input type="text" ng-model="loginData.username">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">Senha</span>
+                    <input type="password" ng-model="loginData.password">
+                </label>
+                <label class="item">
+                    <button class="button button-block button-positive" type="submit">Log in</button>
+                </label>
+            </div>
+        </form>
+    </ion-content>
+</ion-modal-view>

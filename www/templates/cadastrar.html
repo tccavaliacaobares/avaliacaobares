@@ -1,0 +1,35 @@
+<ion-view title="Login" id="login">
+    <ion-content>
+        <div>
+            <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
+        </div>
+        <h1 style="text-align: center;">Cadastro de Bares</h1>
+        <form ng-submit="cadastrarBar()">
+            <div class="list">
+                <label class="item item-input">
+                    <span class="input-label">Nome</span>
+                    <input type="text" ng-model="bar.nome">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">Endereço</span>
+                    <input type="text" ng-model="bar.endereco">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">Telefone</span>
+                    <input type="text" ng-model="bar.telefone">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">LAT</span>
+                    <input type="text" ng-model="bar.lat">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">LNG</span>
+                    <input type="text" ng-model="bar.lng">
+                </label>
+                <label class="item">
+                    <button class="button button-block button-positive">Cadastrar</button>
+                </label>
+            </div>
+        </form>
+    </ion-content>
+</ion-view>

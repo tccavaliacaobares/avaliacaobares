@@ -1,0 +1,20 @@
+<ion-view view-title="Avaliar Bares">
+    <ion-content>
+        <div>
+            <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
+        </div>
+        <h1 style="text-align: center;">Avalie o Bar Selecionado</h1>
+        <p style="text-align: center;">
+            Atribuia uma nota abaixo de acordo com o critério desejado. Será feita uma média de notas após sua avaliação
+        </p>
+        <div>
+            <ionic-ratings ratingsobj='ratingsObject' index='$index'></ionic-ratings>
+        </div>
+        <br />
+        <div class="list">
+            <label class="item">
+                <button class="button button-block button-positive" ng-click="avaliarBar()">Avaliar</button>
+            </label>
+        </div>
+    </ion-content>
+</ion-view>
