@@ -6,38 +6,15 @@ angular.module('starter.routes', [])
         url: '/app',
         abstract: true,
         templateUrl: 'templates/menu.html',
-        controller: 'AppCtrl'
+        controller: 'PrincipalCtrl'
     })
-
-    .state('login', {
-        url: '/login',
-        templateUrl: 'templates/login.html',
-        controller: 'LoginCtrl'
-    })
-
-    .state('app.search', {
-        url: '/search',
+    
+    .state('app.principal', {
+        url: '/principal',
         views: {
             'menuContent': {
-                templateUrl: 'templates/search.html'
-            }
-        }
-    })
-
-    .state('app.browse', {
-        url: '/browse',
-        views: {
-            'menuContent': {
-                templateUrl: 'templates/browse.html'
-            }
-        }
-    })
-    .state('app.playlists', {
-        url: '/playlists',
-        views: {
-            'menuContent': {
-                templateUrl: 'templates/playlists.html',
-                controller: 'LoginCtrl'
+                templateUrl: 'templates/principal.html',
+                controller: 'PrincipalCtrl'
             }
         }
     })
@@ -83,6 +60,7 @@ angular.module('starter.routes', [])
         }
     })
 
+    // Parâmetro:
     .state('app.single', {
         url: '/playlists/:playlistId',
         views: {
@@ -91,7 +69,26 @@ angular.module('starter.routes', [])
                 controller: 'PlaylistCtrl'
             }
         }
+    })
+
+    .state('inicio', {
+        url: '/inicio',
+        templateUrl: 'templates/inicio.html',
+        controller: 'LoginCtrl'
+    })
+    
+    .state('login', {
+        url: '/login',
+        templateUrl: 'templates/login.html',
+        controller: 'LoginCtrl'
+    })
+    
+    .state('cadastrarusuario', {
+        url: '/cadastrarusuario',
+        templateUrl: 'templates/cadastrarusuario.html',
+        controller: 'LoginCtrl'
     });
+    
     // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/app/playlists');
+    $urlRouterProvider.otherwise('/inicio');
 });

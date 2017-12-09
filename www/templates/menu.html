@@ -14,18 +14,21 @@
 
     <ion-side-menu side="left">
         <ion-header-bar class="bar-stable">
-            <h1 class="title">Left</h1>
+            <h1 class="title">Menu Principal</h1>
         </ion-header-bar>
         <ion-content>
             <ion-list>
                 <ion-item menu-close href="#/app/playlists">
                     Principal
                 </ion-item>
-                <ion-item menu-close href="#/app/cadastrar">
+                <ion-item menu-close href="#/app/cadastrar" ng-if="perfilCadastro">
                     Cadastrar
                 </ion-item>
                 <ion-item menu-close href="#/app/avaliar">
                     Avaliar
+                </ion-item>
+                <ion-item menu-close ng-click="sair()">
+                    Sair
                 </ion-item>
             </ion-list>
         </ion-content>

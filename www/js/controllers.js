@@ -1,108 +1,150 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout) {
+.controller('AppCtrl', function ($scope, $state, $stateParams, $ionicModal, $timeout) {
+    // With the new view caching in Ionic, Controllers are only called
+    // when they are recreated or on app start, instead of every page change.
+    // To listen for when this page is active (for example, to refresh data),
+    // listen for the $ionicView.enter event:
+    //$scope.$on('$ionicView.enter', function(e) {
+    //});
 
-  // With the new view caching in Ionic, Controllers are only called
-  // when they are recreated or on app start, instead of every page change.
-  // To listen for when this page is active (for example, to refresh data),
-  // listen for the $ionicView.enter event:
-  //$scope.$on('$ionicView.enter', function(e) {
-  //});
-
-  // Form data for the login modal
-  $scope.loginData = {};
-
-  // Create the login modal that we will use later
-  $ionicModal.fromTemplateUrl('templates/login.html', {
-    scope: $scope
-  }).then(function(modal) {
-    $scope.modal = modal;
-  });
-
-  // Triggered in the login modal to close it
-  $scope.closeLogin = function() {
-    $scope.modal.hide();
-  };
-
-  // Open the login modal
-  $scope.login = function() {
-    $scope.modal.show();
-  };
-
-  // Perform the login action when the user submits the login form
-  $scope.doLogin = function() {
-    console.log('Doing login', $scope.loginData);
-
-    // Simulate a login delay. Remove this and replace with your login
-    // code if using a login system
-    $timeout(function() {
-      $scope.closeLogin();
-    }, 1000);
-  };
-})
-
-.controller('PlaylistsCtrl', function($scope) {
-  $scope.playlists = [
-    { title: 'Reggae', id: 1 },
-    { title: 'Chill', id: 2 },
-    { title: 'Dubstep', id: 3 },
-    { title: 'Indie', id: 4 },
-    { title: 'Rap', id: 5 },
-    { title: 'Cowbell', id: 6 }
-  ];
-})
-
-.controller('LoginCtrl', function ($scope, $state, firebaseFactory, utilsFactory) {
+    // Form data for the login modal
     $scope.loginData = {};
+
+    // Create the login modal that we will use later
+    $ionicModal.fromTemplateUrl('templates/login.html', {
+        scope: $scope
+    }).then(function (modal) {
+        $scope.modal = modal;
+    });
+
+    // Triggered in the login modal to close it
+    $scope.closeLogin = function () {
+        $scope.modal.hide();
+    };
+
+    // Open the login modal
+    $scope.login = function () {
+        $scope.modal.show();
+    };
+
+    // Perform the login action when the user submits the login form
+    $scope.doLogin = function () {
+        console.log('Doing login', $scope.loginData);
+
+        // Simulate a login delay. Remove this and replace with your login
+        // code if using a login system
+        $timeout(function () {
+            $scope.closeLogin();
+        }, 1000);
+    };
+})
+
+.controller('LoginCtrl', function ($scope, $state, $q, firebaseFactory, utilsFactory) {
+    $scope.loginData = {};
+    $scope.signData = {};
     
-    $scope.loginFirebase = function () {        
+    // Realizar Login:
+    $scope.loginUsuario = function () {
         if (angular.isUndefined($scope.loginData.username) || angular.isUndefined($scope.loginData.password)) {
             utilsFactory.showAlert('validation/login', 'Todos os campos são obrigatórios!');
         } else {
             utilsFactory.showLoading();
-
-            firebase.auth().signInWithEmailAndPassword($scope.loginData.username, $scope.loginData.password).catch(function (error) {
+            
+            // Efetuar o login e redirecionar para a tela principal:
+            firebase.auth().signInWithEmailAndPassword($scope.loginData.username, $scope.loginData.password).then(function (user) {
+                $state.go('app.principal');
+                utilsFactory.hideLoading();
+                
+                console.log(user);
+            }).catch(function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message);
             });
         }
     };
     
+    // Cadastrar Usuário:
+    $scope.cadastrarUsuario = function () {
+        if (angular.isUndefined($scope.signData.username) || angular.isUndefined($scope.signData.password)) {
+            utilsFactory.showAlert('validation/login', 'Todos os campos são obrigatórios!');
+        } else {
+            utilsFactory.showLoading();
+
+            // Criar usuário:
+            firebase.auth().createUserWithEmailAndPassword($scope.signData.username, $scope.signData.password).then(function (user) {
+                // Criar o perfil e redirecionar:
+                criarPerfil(user.uid).then(function (perfil) {
+                    $state.go('app.principal');
+                    utilsFactory.hideLoading();
+                }, function (error) {
+                    console.error(error);
+                });
+            }).catch(function (error) {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert(error.code, error.message);
+            });
+        }
+    }
+
+    function criarPerfil(uid) {
+        return $q(function (resolve, reject) {
+            // var user = firebase.auth().currentUser;
+
+            var database = firebase.database();
+            var perfisRef = database.ref('perfis/' + uid);
+            var perfil = {tipo: 'comum'};
+
+            perfisRef.set(perfil).then(function () {
+                resolve(perfil);
+            }, function (error) {
+                reject(error);
+            });
+        });
+    }
+})
+
+.controller('PrincipalCtrl', function ($scope, $state, firebaseFactory, utilsFactory) {
+    // Verificar o estado da sessão e atualizar o perfil:
+    firebase.auth().onAuthStateChanged(function (user) {
+        utilsFactory.showLoading();
+
+        if (user) {
+            var database = firebase.database();
+            var perfilRef = database.ref('perfis/' + user.uid);
+
+            perfilRef.once("value").then(function (perfil) {
+                if (perfil.child('tipo').val() == 'administrador') {
+                    $scope.perfilCadastro = true;
+                } else {
+                    $scope.perfilCadastro = false;
+                }
+
+                utilsFactory.hideLoading();
+            });
+        } else {
+            $state.go('login');
+            utilsFactory.hideLoading();
+        }
+    });
+    
+    // Sair:
     $scope.sair = function () {
         utilsFactory.showLoading();
 
         firebase.auth().signOut().then(function () {
             $state.go('login');
-            
             utilsFactory.hideLoading();
+            
             console.log('Sign-out successful.');
         }).catch(function (error) {
             utilsFactory.hideLoading();
             utilsFactory.showAlert(error.code, error.message);
         });
     }
-    
-    firebase.auth().onAuthStateChanged(function (user) {
-        if (user) {
-            utilsFactory.hideLoading();
-            
-            var displayName = user.displayName;
-            var email = user.email;
-            var emailVerified = user.emailVerified;
-            var photoURL = user.photoURL;
-            var isAnonymous = user.isAnonymous;
-            var uid = user.uid;
-            var providerData = user.providerData;
-            
-            $state.go('app.playlists');
-            console.log(user);
-        } else {
-            utilsFactory.hideLoading();
-        }
-    });  
 })
 
-.controller('BarCtrl', function ($scope, $stateParams, $state, firebaseFactory, utilsFactory) {
+.controller('BarCtrl', function ($scope, $state, firebaseFactory, utilsFactory) {
     $scope.bar = {};
     $scope.avaliacao = {};
     
@@ -212,6 +254,3 @@ angular.module('starter.controllers', [])
         });
     }
 })
-
-.controller('PlaylistCtrl', function($scope, $stateParams) {
-});

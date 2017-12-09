@@ -1,0 +1,27 @@
+<ion-view view-title="Cadastro de Usuários">
+    <ion-content>
+        <br />
+        <div>
+            <img ng-src="img/img_311846.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
+        </div>
+        <h1 style="text-align: center">Cadastro de Usuários</h1>
+        <p style="text-align: center">
+            Entre abaixo com os seus dados para finalizar o cadastro.
+        </p>
+        <form ng-submit="cadastrarUsuario()">
+            <div class="list">
+                <label class="item item-input">
+                    <span class="input-label">Usuário</span>
+                    <input type="text" ng-model="signData.username">
+                </label>
+                <label class="item item-input">
+                    <span class="input-label">Senha</span>
+                    <input type="password" ng-model="signData.password">
+                </label>
+                <label class="item">
+                    <button class="button button-block button-positive" type="submit">Sign in</button>
+                </label>
+            </div>
+        </form>
+    </ion-content>
+</ion-view>
