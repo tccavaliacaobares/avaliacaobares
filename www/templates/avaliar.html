@@ -1,19 +1,20 @@
-<ion-view view-title="Avaliar Bares">
+<ion-view view-title="Avaliação de Bares">
     <ion-content>
+        <br />
         <div>
             <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
         </div>
         <h1 style="text-align: center;">Avaliação de Bares</h1>
         <p style="text-align: center;">
-            Clique em <b>Listar</b> para visualizar os bares disponíveis para avaliação e escolha um para avaliação.
+            Clique em <b>Listar</b> para visualizar os bares disponíveis para avaliação e escolha um para prosseguir.
         </p>
-        <label class="item">
+        <div class="padding-horizontal">
             <button class="button button-block button-positive" ng-click="carregarBares()">Listar</button>
-        </label>
+        </div>
         <ul class="list">
             <li class="item" ng-repeat="(key, value) in bares" ng-click="definirBar(key, value)">
                 <b>{{value.nome}}</b>
-                <h5>{{value.endereco}}</h5>
+                <h5>{{value.logradouro}}</h5>
             </li>
         </ul>
     </ion-content>

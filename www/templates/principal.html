@@ -1,17 +1,16 @@
-<ion-view view-title="Avaliação de Bares">
-    <ion-content>
+<ion-view view-title="Avaliação de Bares" hide-back-button="true">
+    <ion-content padding="true">
         <div>
             <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
         </div>
         <h1 style="text-align: center">Avaliação de Bares</h1>
-        <p style="text-align: center">
+        <p style="text-align: center; font-style: italic;">
             Escolha ao lado a opção desejada.
         </p>
-        <div class="list">
-            <label class="item">
-                <button class="button button-block button-positive" ng-click="sair()">Sair</button>
-            </label>
-        </div>
+        <p style="text-align: center">
+            Esta aplicação permite a avalição de <b style="color: red;">bares</b> em sua região. Para mais informções, entre em contato com a equipe de desenvolvimento.
+        </p>
+        <button class="button button-block button-positive" ng-click="sair()">Sair</button>
         <!--
         <ion-list>
             <ion-item ng-repeat="playlist in playlists" href="#/app/playlists/{{playlist.id}}">

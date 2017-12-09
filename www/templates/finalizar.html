@@ -1,5 +1,5 @@
 <ion-view view-title="Avaliar Bares">
-    <ion-content>
+    <ion-content padding="true">
         <div>
             <img ng-src="img/bar1600.png" width="30%" height="auto" style="display: block; margin-left: auto; margin-right: auto;">
         </div>
@@ -11,10 +11,8 @@
             <ionic-ratings ratingsobj='ratingsObject' index='$index'></ionic-ratings>
         </div>
         <br />
-        <div class="list">
-            <label class="item">
-                <button class="button button-block button-positive" ng-click="avaliarBar()">Avaliar</button>
-            </label>
+        <div class="padding-horizontal">
+            <button class="button button-block button-positive" ng-click="avaliarBar()">Avaliar</button>
         </div>
     </ion-content>
 </ion-view>
