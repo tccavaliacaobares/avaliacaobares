@@ -43,3 +43,22 @@ angular.module('starter.factories', [])
 
     return utilsFactory;
 })
+
+.factory('serviceFactory', function ($http, $q) {
+    var serviceFactory = {
+        doGet: function (url) {
+            return $q(function (resolve, reject) {
+                $http({
+                    method: 'GET',
+                    url: url
+                }).then(function successCallback(response) {
+                    resolve(response);
+                }, function errorCallback(response) {
+                    reject(response);
+                });
+            });
+        }
+    }
+    
+    return serviceFactory;
+});

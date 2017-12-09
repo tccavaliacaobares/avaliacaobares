@@ -78,11 +78,14 @@ angular.module('starter.controllers', [])
                     $state.go('app.principal');
                     utilsFactory.hideLoading();
                 }, function (error) {
+                    utilsFactory.hideLoading();
+                    utilsFactory.showAlert(error.code, error.message);
                     console.error(error);
                 });
             }).catch(function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message);
+                console.error(error);
             });
         }
     }
@@ -134,51 +137,56 @@ angular.module('starter.controllers', [])
 
         firebase.auth().signOut().then(function () {
             $state.go('login');
-            utilsFactory.hideLoading();
             
-            console.log('Sign-out successful.');
+            utilsFactory.hideLoading();
         }).catch(function (error) {
             utilsFactory.hideLoading();
             utilsFactory.showAlert(error.code, error.message);
+            console.log(error);
         });
     }
 })
 
-.controller('BarCtrl', function ($scope, $state, firebaseFactory, utilsFactory) {
+.controller('BarCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, serviceFactory, utilsFactory) {
     $scope.bar = {};
+    $scope.endereco = {};
     $scope.avaliacao = {};
     
-    $scope.inicio = function () {
-        $state.go('app.playlists');
-    };
-    
-    $scope.ratingsObject = {
-        iconOn: 'ion-ios-star',
-        iconOff: 'ion-ios-star-outline',
-        iconOnColor: 'rgb(200, 200, 100)',
-        iconOffColor: 'rgb(200, 100, 100)',
-        rating: 1,
-        minRating: 0,
-        callback: function (rating) {
-            $scope.ratingsCallback(rating);
-        }
-    };
-    
-    $scope.ratingsCallback = function (rating) {
-        $scope.avaliacao.nota = rating;
-    };
-    
-    $scope.cadastrarBar = function () {  
+    $scope.cadastrarBar = function () {
         var database = firebase.database();
         var baresRef = database.ref('bares');
-        
+        var bar = {};
+
+        bar.nome = $scope.bar.nome;
+        bar.logradouro = $scope.endereco.logradouro;
+        bar.numero = $scope.endereco.numero;
+        bar.bairro = $scope.endereco.bairro;
+        bar.cidade = $scope.endereco.cidade;
+
         utilsFactory.showLoading();
 
-        baresRef.push($scope.bar).then(function (bar) {
-            utilsFactory.hideLoading();
-            utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso!");
+        // Obter as coordenadas do endereço:
+        obterCoordenadasGoogleAPI($scope.endereco).then(function (coordenadas) {
+            if (angular.isDefined(coordenadas.data.results[0])) {
+                bar.lat = coordenadas.data.results[0].geometry.location.lat;
+                bar.lng = coordenadas.data.results[0].geometry.location.lng;
+            }
+
+            // Cadastrar o Bar:
+            baresRef.push(bar).then(function () {
+                $ionicHistory.nextViewOptions({historyRoot: true});
+                $state.go('app.principal');
+                
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
+            }, function (error) {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert(error.code, error.message)
+                console.error(error);
+            });
         }, function (error) {
             utilsFactory.hideLoading();
+            utilsFactory.showAlert(error.code, error.message)
             console.error(error);
         });
     }
@@ -201,56 +209,114 @@ angular.module('starter.controllers', [])
     }
     
     $scope.avaliarBar = function () {
-        inserirAvaliacao();
-    }
-    
-    function inserirAvaliacao() { 
-        var database = firebase.database();
-        var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
-
         utilsFactory.showLoading();
 
-        avaliacoesRef.push($scope.avaliacao).then(function () {
-            atualizarMedia();
+        inserirAvaliacao().then(function () {
+            atualizarMedia().then(function () {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert("Sucesso", "Avaliação inserida com sucesso!");
+                $state.go('app.concluir');
+            }, function (error) {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert(error.code, error.message)
+                console.error(error);
+            });
         }, function (error) {
             utilsFactory.hideLoading();
+            utilsFactory.showAlert(error.code, error.message)
             console.error(error);
+        });
+    }
+    
+    $scope.principal = function () {
+        $ionicHistory.nextViewOptions({historyRoot: true});
+        $state.go('app.principal');
+    }
+    
+    $scope.ratingsObject = {
+        iconOn: 'ion-ios-star',
+        iconOff: 'ion-ios-star-outline',
+        iconOnColor: 'rgb(200, 200, 100)',
+        iconOffColor: 'rgb(200, 100, 100)',
+        rating: 1,
+        minRating: 0,
+        callback: function (rating) {
+            $scope.ratingsCallback(rating);
+        }
+    };
+    
+    $scope.ratingsCallback = function (rating) {
+        $scope.avaliacao.nota = rating;
+    };
+    
+    function inserirAvaliacao() {
+        return $q(function (resolve, reject) {
+            var database = firebase.database();
+            var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
+
+            avaliacoesRef.push($scope.avaliacao).then(function () {
+                resolve();
+            }, function (error) {
+                reject(error);
+            });
         });
     }
     
     function atualizarMedia() {
-        var soma = 0;
-        var media = 0;
-        var totalAvaliacoes = 0;
+        return $q(function (resolve, reject) {
+            var soma = 0;
+            var media = 0;
+            var totalAvaliacoes = 0;
 
-        var mediaBar = {};
-        
-        var database = firebase.database();
-        var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
-        var barRef = database.ref("bares/" + barAvaliavel);
+            var mediaBar = {};
 
-        avaliacoesRef.once('value').then(function (avaliacoes) {
-            avaliacoes.forEach(function (avaliacao) {
-                soma += parseInt(avaliacao.val().nota);
-                totalAvaliacoes++;
+            var database = firebase.database();
+            var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
+            var barRef = database.ref("bares/" + barAvaliavel);
+
+            avaliacoesRef.once('value').then(function (avaliacoes) {
+                avaliacoes.forEach(function (avaliacao) {
+                    soma += parseInt(avaliacao.val().nota);
+                    totalAvaliacoes++;
+                });
+
+                media = parseInt(soma) / parseInt(totalAvaliacoes);
+                mediaBar.media = media.toFixed(2);
+
+                barRef.update(mediaBar).then(function () {
+                    resolve();
+                }, function (error) {
+                    reject(error);
+                });
+            }, function (error) {
+                reject(error);
             });
-
-            media = parseInt(soma) / parseInt(totalAvaliacoes);
-            mediaBar.media = media.toFixed(2);
-
-            barRef.update(mediaBar, function (error) {
-                if (error) {
-                    utilsFactory.hideLoading();
-                    console.error(error);
-                } else {
-                    utilsFactory.hideLoading();
-                    utilsFactory.showAlert("Sucesso", "Avaliação inserida com sucesso!");
-                    $state.go('app.concluir');
-                }
-            });
-        }, function (error) {
-            utilsFactory.hideLoading();
-            console.error(error);
         });
     }
-})
+    
+    function obterCoordenadasGoogleAPI(endereco) {
+        return $q(function (resolve, reject) {
+            var baseURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
+            var key = '&key=AIzaSyBuSpoUAyt0yqLAlICIYOJTumjHQVrqjF4';
+            var parametros = '';
+
+            var index = 0;
+            angular.forEach(endereco, function (parametro, chave) {
+                if (index == 0) {
+                    parametros += parametro;
+                } else {
+                    parametros += "+" + parametro;
+                }
+                index++;
+            });
+
+            var url = baseURL + parametros + key;
+
+            serviceFactory.doGet(url).then(function (response) {
+                resolve(response);
+            }, function (error) {
+                reject(error);
+            });
+        });
+    }
+});

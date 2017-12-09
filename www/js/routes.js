@@ -60,16 +60,16 @@ angular.module('starter.routes', [])
         }
     })
 
-    // Parâmetro:
-    .state('app.single', {
-        url: '/playlists/:playlistId',
-        views: {
-            'menuContent': {
-                templateUrl: 'templates/playlist.html',
-                controller: 'PlaylistCtrl'
-            }
-        }
-    })
+// Parâmetro:
+//    .state('app.single', {
+//        url: '/playlists/:playlistId',
+//        views: {
+//            'menuContent': {
+//                templateUrl: 'templates/playlist.html',
+//                controller: 'PlaylistCtrl'
+//            }
+//        }
+//    })
 
     .state('inicio', {
         url: '/inicio',
