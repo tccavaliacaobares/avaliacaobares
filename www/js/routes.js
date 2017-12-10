@@ -59,6 +59,16 @@ angular.module('starter.routes', [])
             }
         }
     })
+    
+    .state('app.mapa', {
+        url: '/mapa',
+        views: {
+            'menuContent': {
+                templateUrl: 'templates/mapa.html',
+                controller: 'MapaCtrl'
+            }
+        }
+    })
 
 // Parâmetro:
 //    .state('app.single', {

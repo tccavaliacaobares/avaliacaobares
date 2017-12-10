@@ -1,45 +1,5 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function ($scope, $state, $stateParams, $ionicModal, $timeout) {
-    // With the new view caching in Ionic, Controllers are only called
-    // when they are recreated or on app start, instead of every page change.
-    // To listen for when this page is active (for example, to refresh data),
-    // listen for the $ionicView.enter event:
-    //$scope.$on('$ionicView.enter', function(e) {
-    //});
-
-    // Form data for the login modal
-    $scope.loginData = {};
-
-    // Create the login modal that we will use later
-    $ionicModal.fromTemplateUrl('templates/login.html', {
-        scope: $scope
-    }).then(function (modal) {
-        $scope.modal = modal;
-    });
-
-    // Triggered in the login modal to close it
-    $scope.closeLogin = function () {
-        $scope.modal.hide();
-    };
-
-    // Open the login modal
-    $scope.login = function () {
-        $scope.modal.show();
-    };
-
-    // Perform the login action when the user submits the login form
-    $scope.doLogin = function () {
-        console.log('Doing login', $scope.loginData);
-
-        // Simulate a login delay. Remove this and replace with your login
-        // code if using a login system
-        $timeout(function () {
-            $scope.closeLogin();
-        }, 1000);
-    };
-})
-
 .controller('LoginCtrl', function ($scope, $state, $q, firebaseFactory, utilsFactory) {
     $scope.loginData = {};
     $scope.signData = {};
@@ -147,7 +107,7 @@ angular.module('starter.controllers', [])
     }
 })
 
-.controller('BarCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, serviceFactory, utilsFactory) {
+.controller('BarCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, mapsFactory, serviceFactory, utilsFactory) {
     $scope.bar = {};
     $scope.endereco = {};
     $scope.avaliacao = {};
@@ -166,7 +126,7 @@ angular.module('starter.controllers', [])
         utilsFactory.showLoading();
 
         // Obter as coordenadas do endereço:
-        obterCoordenadasGoogleAPI($scope.endereco).then(function (coordenadas) {
+        mapsFactory.obterCoordenadas($scope.endereco).then(function (coordenadas) {
             if (angular.isDefined(coordenadas.data.results[0])) {
                 bar.lat = coordenadas.data.results[0].geometry.location.lat;
                 bar.lng = coordenadas.data.results[0].geometry.location.lng;
@@ -194,12 +154,16 @@ angular.module('starter.controllers', [])
     $scope.carregarBares = function () {
         var database = firebase.database();
         var baresRef = database.ref('bares');
-        
+
         utilsFactory.showLoading();
 
         baresRef.once('value').then(function (bares) {
             utilsFactory.hideLoading();
             $scope.bares = bares.val();
+        }, function (error) {
+            utilsFactory.hideLoading();
+            utilsFactory.showAlert(error.code, error.message)
+            console.error(error);
         });
     }
     
@@ -293,27 +257,75 @@ angular.module('starter.controllers', [])
             });
         });
     }
-    
-    function obterCoordenadasGoogleAPI(endereco) {
-        return $q(function (resolve, reject) {
-            var baseURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
-            var key = '&key=AIzaSyBuSpoUAyt0yqLAlICIYOJTumjHQVrqjF4';
-            var parametros = '';
+})
 
-            var index = 0;
-            angular.forEach(endereco, function (parametro, chave) {
-                if (index == 0) {
-                    parametros += parametro;
-                } else {
-                    parametros += "+" + parametro;
-                }
-                index++;
+.controller('MapaCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, mapsFactory, serviceFactory, utilsFactory) {
+    $scope.$on('$ionicView.enter', function () {
+        utilsFactory.showLoading();
+
+        mapsFactory.obterLocalizacaoHTML5().then(function (coordenadas) {
+            $scope.map = new google.maps.Map(document.getElementById('map'), {center: {lat: -34.397, lng: 150.644}, zoom: 15, mapTypeId: google.maps.MapTypeId.ROADMAP});
+            $scope.map.setCenter(coordenadas);
+
+            obterMediasMapa().then(function () {
+                utilsFactory.hideLoading();
+            }, function (error) {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert(error.code, error.message)
+                console.error(error);
             });
+        }, function (error) {
+            utilsFactory.hideLoading();
+            utilsFactory.showAlert(error.code, error.message)
+            console.error(error);
+        });
+    });
+    
+    $scope.ondeEstou = function () {
+        if ($scope.map) {
+            mapsFactory.obterLocalizacaoHTML5().then(function (coordenadas) {
+                $scope.map.setCenter(coordenadas);
+            }, function (error) {
+                utilsFactory.hideLoading();
+                utilsFactory.showAlert(error.code, error.message)
+                console.error(error);
+            });
+        }
+    }
+    
+    function obterMediasMapa() {
+        return $q(function (resolve, reject) {
+            var database = firebase.database();
+            var baresRef = database.ref('bares');
 
-            var url = baseURL + parametros + key;
+            baresRef.once('value').then(function (bares) {
+                bares.forEach(function (bar) {
+                    var media = angular.isDefined(bar.val().media) ? bar.val().media : 'Sem Média;';
+                    var contentString =
+                            '<div id="content">' +
+                            '<div id="headerContent">' +
+                            '<h3>' + bar.val().nome + '</h3>' +
+                            '<h4>' + bar.val().logradouro + ', ' + bar.val().numero + '</h4>' +
+                            '</div>' +
+                            '<div id="bodyContent">' +
+                            'Média: ' + media +
+                            '</div>' +
+                            '</div>';
+                    var infowindow = new google.maps.InfoWindow({
+                        content: contentString
+                    });
+                    var marker = new google.maps.Marker({
+                        position: {lat: bar.val().lat, lng: bar.val().lng},
+                        map: $scope.map,
+                        title: bar.val().nome
+                    });
 
-            serviceFactory.doGet(url).then(function (response) {
-                resolve(response);
+                    marker.addListener('click', function () {
+                        infowindow.open($scope.map, marker);
+                    });
+
+                });
+                resolve();
             }, function (error) {
                 reject(error);
             });

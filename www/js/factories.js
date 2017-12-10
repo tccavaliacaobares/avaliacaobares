@@ -25,6 +25,10 @@ angular.module('starter.factories', [])
             });
         },
         
+        hideLoading: function () {
+            $ionicLoading.hide();
+        },
+        
         showAlert: function (title, template) {
             var alertPopup = $ionicPopup.alert({
                 title: title,
@@ -34,10 +38,6 @@ angular.module('starter.factories', [])
             alertPopup.then(function (response) {
                 console.log(response);
             });
-        },
-
-        hideLoading: function () {
-            $ionicLoading.hide();
         }
     }
 
@@ -61,4 +61,48 @@ angular.module('starter.factories', [])
     }
     
     return serviceFactory;
+})
+
+.factory('mapsFactory', function ($q, serviceFactory) {
+    var mapsFactory = {
+        obterLocalizacaoHTML5: function () {
+            return $q(function (resolve, reject) {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function (position) {
+                        resolve({lat: position.coords.latitude, lng: position.coords.longitude});
+                    }, function (error) {
+                        reject(error);
+                    });
+                }
+            });
+        },
+        
+        obterCoordenadas: function (endereco) {
+            return $q(function (resolve, reject) {
+                var baseURL = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
+                var key = '&key=AIzaSyBuSpoUAyt0yqLAlICIYOJTumjHQVrqjF4';
+                var parametros = '';
+
+                var index = 0;
+                angular.forEach(endereco, function (parametro, chave) {
+                    if (index == 0) {
+                        parametros += parametro;
+                    } else {
+                        parametros += "+" + parametro;
+                    }
+                    index++;
+                });
+
+                var url = baseURL + parametros + key;
+
+                serviceFactory.doGet(url).then(function (response) {
+                    resolve(response);
+                }, function (error) {
+                    reject(error);
+                });
+            });
+        }
+    }
+
+    return mapsFactory;
 });
