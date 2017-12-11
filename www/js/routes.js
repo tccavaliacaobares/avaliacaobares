@@ -69,6 +69,15 @@ angular.module('starter.routes', [])
             }
         }
     })
+    
+    .state('app.atendimento', {
+        url: '/atendimento',
+        views: {
+            'menuContent': {
+                templateUrl: 'templates/atendimento.html'
+            }
+        }
+    })
 
 // Parâmetro:
 //    .state('app.single', {
@@ -97,6 +106,11 @@ angular.module('starter.routes', [])
         url: '/cadastrarusuario',
         templateUrl: 'templates/cadastrarusuario.html',
         controller: 'LoginCtrl'
+    })
+    
+    .state('ajuda', {
+        url: '/ajuda',
+        templateUrl: 'templates/ajuda.html'
     });
     
     // if none of the above states are matched, use this as the fallback

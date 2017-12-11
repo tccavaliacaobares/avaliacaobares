@@ -30,13 +30,33 @@ angular.module('starter.factories', [])
         },
         
         showAlert: function (title, template) {
+            if (title) {
+                switch (title) {
+                    case "auth/email-already-in-use":
+                        template = "O endereço de e-mail já está sendo usado por outra conta.";
+                        break;
+                    case "auth/invalid-email":
+                        template = "O endereço de e-mail está mal formatado.";
+                        break;
+                    case "auth/user-not-found":
+                        template = "Não há registro de usuário correspondente a este identificador. O usuário pode ter sido excluído.";
+                        break;
+                    case "auth/wrong-password":
+                        template = "A senha é inválida ou o usuário não possui uma senha.";
+                        break;
+                    case "auth/weak-password":
+                        template = "A senha deve ter pelo menos 6 caracteres.";
+                        break;
+                }
+            }
+
             var alertPopup = $ionicPopup.alert({
                 title: title,
                 template: template
             });
 
             alertPopup.then(function (response) {
-                console.log(response);
+                // Executa uma ação após a confirmação do alerta pelo usuário;
             });
         }
     }
@@ -69,7 +89,7 @@ angular.module('starter.factories', [])
             return $q(function (resolve, reject) {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(function (position) {
-                        resolve({lat: position.coords.latitude, lng: position.coords.longitude});
+                        resolve(position);
                     }, function (error) {
                         reject(error);
                     });

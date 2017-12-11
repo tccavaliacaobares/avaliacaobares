@@ -7,7 +7,7 @@ angular.module('starter.controllers', [])
     // Realizar Login:
     $scope.loginUsuario = function () {
         if (angular.isUndefined($scope.loginData.username) || angular.isUndefined($scope.loginData.password)) {
-            utilsFactory.showAlert('validation/login', 'Todos os campos são obrigatórios!');
+            utilsFactory.showAlert('validation/login', 'Todos os campos são obrigatórios.');
         } else {
             utilsFactory.showLoading();
             
@@ -20,6 +20,7 @@ angular.module('starter.controllers', [])
             }).catch(function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message);
+                console.error(error);
             });
         }
     };
@@ -34,7 +35,7 @@ angular.module('starter.controllers', [])
             // Criar usuário:
             firebase.auth().createUserWithEmailAndPassword($scope.signData.username, $scope.signData.password).then(function (user) {
                 // Criar o perfil e redirecionar:
-                criarPerfil(user.uid).then(function (perfil) {
+                criarPerfil(user.uid).then(function () {
                     $state.go('app.principal');
                     utilsFactory.hideLoading();
                 }, function (error) {
@@ -59,7 +60,7 @@ angular.module('starter.controllers', [])
             var perfil = {tipo: 'comum'};
 
             perfisRef.set(perfil).then(function () {
-                resolve(perfil);
+                resolve();
             }, function (error) {
                 reject(error);
             });
@@ -97,7 +98,6 @@ angular.module('starter.controllers', [])
 
         firebase.auth().signOut().then(function () {
             $state.go('login');
-            
             utilsFactory.hideLoading();
         }).catch(function (error) {
             utilsFactory.hideLoading();
@@ -136,7 +136,6 @@ angular.module('starter.controllers', [])
             baresRef.push(bar).then(function () {
                 $ionicHistory.nextViewOptions({historyRoot: true});
                 $state.go('app.principal');
-                
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
             }, function (error) {
@@ -259,13 +258,13 @@ angular.module('starter.controllers', [])
     }
 })
 
-.controller('MapaCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, mapsFactory, serviceFactory, utilsFactory) {
+.controller('MapaCtrl', function ($scope, $q, firebaseFactory, mapsFactory, utilsFactory) {
     $scope.$on('$ionicView.enter', function () {
         utilsFactory.showLoading();
 
-        mapsFactory.obterLocalizacaoHTML5().then(function (coordenadas) {
+        mapsFactory.obterLocalizacaoHTML5().then(function (position) {
             $scope.map = new google.maps.Map(document.getElementById('map'), {center: {lat: -34.397, lng: 150.644}, zoom: 15, mapTypeId: google.maps.MapTypeId.ROADMAP});
-            $scope.map.setCenter(coordenadas);
+            $scope.map.setCenter({lat: position.coords.latitude, lng: position.coords.longitude});
 
             obterMediasMapa().then(function () {
                 utilsFactory.hideLoading();
@@ -283,8 +282,8 @@ angular.module('starter.controllers', [])
     
     $scope.ondeEstou = function () {
         if ($scope.map) {
-            mapsFactory.obterLocalizacaoHTML5().then(function (coordenadas) {
-                $scope.map.setCenter(coordenadas);
+            mapsFactory.obterLocalizacaoHTML5().then(function (position) {
+                $scope.map.setCenter({lat: position.coords.latitude, lng: position.coords.longitude});
             }, function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message)
