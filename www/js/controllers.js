@@ -113,41 +113,45 @@ angular.module('starter.controllers', [])
     $scope.avaliacao = {};
     
     $scope.cadastrarBar = function () {
-        var database = firebase.database();
-        var baresRef = database.ref('bares');
-        var bar = {};
+        if (angular.isDefined($scope.bar.nome) && angular.isDefined($scope.endereco.logradouro) && angular.isDefined($scope.endereco.numero) && angular.isDefined($scope.endereco.bairro) && angular.isDefined($scope.endereco.cidade)) {
+            var database = firebase.database();
+            var baresRef = database.ref('bares');
+            var bar = {};
 
-        bar.nome = $scope.bar.nome;
-        bar.logradouro = $scope.endereco.logradouro;
-        bar.numero = $scope.endereco.numero;
-        bar.bairro = $scope.endereco.bairro;
-        bar.cidade = $scope.endereco.cidade;
+            bar.nome = $scope.bar.nome;
+            bar.logradouro = $scope.endereco.logradouro;
+            bar.numero = $scope.endereco.numero;
+            bar.bairro = $scope.endereco.bairro;
+            bar.cidade = $scope.endereco.cidade;
 
-        utilsFactory.showLoading();
+            utilsFactory.showLoading();
 
-        // Obter as coordenadas do endereço:
-        mapsFactory.obterCoordenadas($scope.endereco).then(function (coordenadas) {
-            if (angular.isDefined(coordenadas.data.results[0])) {
-                bar.lat = coordenadas.data.results[0].geometry.location.lat;
-                bar.lng = coordenadas.data.results[0].geometry.location.lng;
-            }
+            // Obter as coordenadas do endereço:
+            mapsFactory.obterCoordenadas($scope.endereco).then(function (coordenadas) {
+                if (angular.isDefined(coordenadas.data.results[0])) {
+                    bar.lat = coordenadas.data.results[0].geometry.location.lat;
+                    bar.lng = coordenadas.data.results[0].geometry.location.lng;
+                }
 
-            // Cadastrar o Bar:
-            baresRef.push(bar).then(function () {
-                $ionicHistory.nextViewOptions({historyRoot: true});
-                $state.go('app.principal');
-                utilsFactory.hideLoading();
-                utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
+                // Cadastrar o Bar:
+                baresRef.push(bar).then(function () {
+                    $ionicHistory.nextViewOptions({historyRoot: true});
+                    $state.go('app.principal');
+                    utilsFactory.hideLoading();
+                    utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
+                }, function (error) {
+                    utilsFactory.hideLoading();
+                    utilsFactory.showAlert(error.code, error.message)
+                    console.error(error);
+                });
             }, function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message)
                 console.error(error);
             });
-        }, function (error) {
-            utilsFactory.hideLoading();
-            utilsFactory.showAlert(error.code, error.message)
-            console.error(error);
-        });
+        } else {
+            utilsFactory.showAlert('validation/push', 'Todos os campos são obrigatórios!');
+        }
     }
 
     $scope.carregarBares = function () {
@@ -174,7 +178,7 @@ angular.module('starter.controllers', [])
     $scope.avaliarBar = function () {
         utilsFactory.showLoading();
 
-        inserirAvaliacao().then(function () {
+        inserirAvaliacao($scope.avaliacao).then(function () {
             atualizarMedia().then(function () {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert("Sucesso", "Avaliação inserida com sucesso!");
@@ -212,12 +216,12 @@ angular.module('starter.controllers', [])
         $scope.avaliacao.nota = rating;
     };
     
-    function inserirAvaliacao() {
+    function inserirAvaliacao(avaliacao) {
         return $q(function (resolve, reject) {
             var database = firebase.database();
             var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
 
-            avaliacoesRef.push($scope.avaliacao).then(function () {
+            avaliacoesRef.push(avaliacao).then(function () {
                 resolve();
             }, function (error) {
                 reject(error);
@@ -259,12 +263,26 @@ angular.module('starter.controllers', [])
 })
 
 .controller('MapaCtrl', function ($scope, $q, firebaseFactory, mapsFactory, utilsFactory) {
+    // Definir o mapa:
     $scope.$on('$ionicView.enter', function () {
+        $scope.map = new google.maps.Map(document.getElementById('map'),
+                {center: {lat: -34.397,
+                          lng: 150.644},
+                          zoom: 15,
+                          mapTypeId: google.maps.MapTypeId.ROADMAP
+                });
+
         utilsFactory.showLoading();
 
+        // Obter a localização:
         mapsFactory.obterLocalizacaoHTML5().then(function (position) {
-            $scope.map = new google.maps.Map(document.getElementById('map'), {center: {lat: -34.397, lng: 150.644}, zoom: 15, mapTypeId: google.maps.MapTypeId.ROADMAP});
             $scope.map.setCenter({lat: position.coords.latitude, lng: position.coords.longitude});
+            
+            // Colocar o marcador da posição atual do usuário:
+            var dados = {position: {lat: position.coords.latitude, lng: position.coords.longitude}, map: $scope.map, title: 'Você está aqui!'};
+            var conteudo = 'Você está aqui!'
+            var icone = new google.maps.MarkerImage("https://lh4.ggpht.com/Tr5sntMif9qOPrKV_UVl7K8A_V3xQDgA7Sw_qweLUFlg76d_vGFA7q1xIKZ6IcmeGqg=w300", null, null, null, new google.maps.Size(50, 50));
+            putMarkerListener(dados, conteudo, icone);
 
             obterMediasMapa().then(function () {
                 utilsFactory.hideLoading();
@@ -300,7 +318,7 @@ angular.module('starter.controllers', [])
             baresRef.once('value').then(function (bares) {
                 bares.forEach(function (bar) {
                     var media = angular.isDefined(bar.val().media) ? bar.val().media : 'Sem Média;';
-                    var contentString =
+                    var conteudo =
                             '<div id="content">' +
                             '<div id="headerContent">' +
                             '<h3>' + bar.val().nome + '</h3>' +
@@ -310,24 +328,32 @@ angular.module('starter.controllers', [])
                             'Média: ' + media +
                             '</div>' +
                             '</div>';
-                    var infowindow = new google.maps.InfoWindow({
-                        content: contentString
-                    });
-                    var marker = new google.maps.Marker({
-                        position: {lat: bar.val().lat, lng: bar.val().lng},
-                        map: $scope.map,
-                        title: bar.val().nome
-                    });
-
-                    marker.addListener('click', function () {
-                        infowindow.open($scope.map, marker);
-                    });
-
+                    var dados = {position: {lat: bar.val().lat, lng: bar.val().lng}, map: $scope.map, title: bar.val().nome};
+                    putMarkerListener(dados, conteudo);
                 });
                 resolve();
             }, function (error) {
                 reject(error);
             });
         });
+    }
+    
+    function putMarkerListener(dados, conteudo, icone) {
+        var marker = new google.maps.Marker({
+            position: dados.position,
+            map: dados.map,
+            title: dados.title,
+        });
+        var infowindow = new google.maps.InfoWindow({
+            content: conteudo
+        });
+
+        marker.addListener('click', function () {
+            infowindow.open(dados.map, marker);
+        });
+
+        if (angular.isDefined(icone)) {
+            marker.setIcon(icone);
+        }
     }
 });

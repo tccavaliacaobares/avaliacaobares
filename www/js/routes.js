@@ -74,7 +74,8 @@ angular.module('starter.routes', [])
         url: '/atendimento',
         views: {
             'menuContent': {
-                templateUrl: 'templates/atendimento.html'
+                templateUrl: 'templates/atendimento.html',
+                controller: 'BarCtrl'
             }
         }
     })

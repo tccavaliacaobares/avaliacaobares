@@ -93,6 +93,8 @@ angular.module('starter.factories', [])
                     }, function (error) {
                         reject(error);
                     });
+                } else {
+                    reject({code: "geolocalização/falha", message: "Não foi possível obter suas coordenadas. Verifique se o serviço de localização está ativo no aparelho."});
                 }
             });
         },
