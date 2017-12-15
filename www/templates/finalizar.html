@@ -11,6 +11,15 @@
             <ionic-ratings ratingsobj='ratingsObject' index='$index'></ionic-ratings>
         </div>
         <br />
+        <p style="text-align: center;">
+            <b>O que acha que poderia melhorar ou está bem classificado?</b> Será contabilizado o detalhe mais escolhido para cada bar.
+        </p>
+        <ion-list>
+            <ion-radio class="item item-text-wrap" name="detalhe" ng-repeat="(chave, valor) in detalhes" ng-value="chave" ng-model="avaliacao.detalhe" ng-checked="$index === 0 ? true : false">
+                {{valor}}
+            </ion-radio>
+        </ion-list>
+        <br />
         <div class="padding-horizontal">
             <button class="button button-block button-positive" ng-click="avaliarBar()">Avaliar</button>
         </div>

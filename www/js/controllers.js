@@ -107,10 +107,23 @@ angular.module('starter.controllers', [])
     }
 })
 
-.controller('BarCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, mapsFactory, serviceFactory, utilsFactory) {
+.controller('BarCtrl', function ($ionicHistory, $scope, $state, $q, firebaseFactory, mapsFactory, utilsFactory) {
+    $scope.$on('$ionicView.enter', function () {
+        utilsFactory.showLoading();
+
+        carregarDetalhes().then(function (detalhes) {
+            utilsFactory.hideLoading();
+            $scope.detalhes = detalhes.val();
+        }, function (error) {
+            utilsFactory.hideLoading();
+            utilsFactory.showAlert(error.code, error.message)
+            console.error(error);
+        });
+    });
+    
     $scope.bar = {};
     $scope.endereco = {};
-    $scope.avaliacao = {};
+    $scope.avaliacao = {nota: 1, detalhe: 'd1'};
     
     $scope.cadastrarBar = function () {
         if (angular.isDefined($scope.bar.nome) && angular.isDefined($scope.endereco.logradouro) && angular.isDefined($scope.endereco.numero) && angular.isDefined($scope.endereco.bairro) && angular.isDefined($scope.endereco.cidade)) {
@@ -216,6 +229,19 @@ angular.module('starter.controllers', [])
         $scope.avaliacao.nota = rating;
     };
     
+    function carregarDetalhes() {
+        return $q(function (resolve, reject) {
+            var database = firebase.database();
+            var detalhesRef = database.ref('detalhes');
+
+            detalhesRef.once('value').then(function (detalhes) {
+                resolve(detalhes);
+            }, function (error) {
+                reject(error);
+            });
+        });
+    }
+    
     function inserirAvaliacao(avaliacao) {
         return $q(function (resolve, reject) {
             var database = firebase.database();
@@ -236,20 +262,37 @@ angular.module('starter.controllers', [])
             var totalAvaliacoes = 0;
 
             var mediaBar = {};
+            var detalhe = {};
+            var detalhes = {};
 
             var database = firebase.database();
             var avaliacoesRef = database.ref("avaliacoes/" + barAvaliavel);
             var barRef = database.ref("bares/" + barAvaliavel);
 
+            // Carregar as avaliações:
             avaliacoesRef.once('value').then(function (avaliacoes) {
                 avaliacoes.forEach(function (avaliacao) {
+                    if (angular.isUndefined(detalhes[avaliacao.val().detalhe])) {
+                        detalhes[avaliacao.val().detalhe] = 1;
+                    } else {
+                        detalhes[avaliacao.val().detalhe] += 1;
+                    }
+
                     soma += parseInt(avaliacao.val().nota);
                     totalAvaliacoes++;
                 });
 
+                // Definir o detalhe mais escolhido:
+                detalhe.chave = Object.keys(detalhes).reduce(function (a, b) {
+                    return detalhes[a] > detalhes[b] ? a : b;
+                });
+
+                // Calcular a média:
                 media = parseInt(soma) / parseInt(totalAvaliacoes);
                 mediaBar.media = media.toFixed(2);
+                mediaBar.detalhe = detalhe.chave;
 
+                // Atualizar o bar:
                 barRef.update(mediaBar).then(function () {
                     resolve();
                 }, function (error) {
@@ -267,9 +310,9 @@ angular.module('starter.controllers', [])
     $scope.$on('$ionicView.enter', function () {
         $scope.map = new google.maps.Map(document.getElementById('map'),
                 {center: {lat: -34.397,
-                          lng: 150.644},
-                          zoom: 15,
-                          mapTypeId: google.maps.MapTypeId.ROADMAP
+                        lng: 150.644},
+                    zoom: 15,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
                 });
 
         utilsFactory.showLoading();
@@ -277,13 +320,14 @@ angular.module('starter.controllers', [])
         // Obter a localização:
         mapsFactory.obterLocalizacaoHTML5().then(function (position) {
             $scope.map.setCenter({lat: position.coords.latitude, lng: position.coords.longitude});
-            
+
             // Colocar o marcador da posição atual do usuário:
             var dados = {position: {lat: position.coords.latitude, lng: position.coords.longitude}, map: $scope.map, title: 'Você está aqui!'};
             var conteudo = 'Você está aqui!'
             var icone = new google.maps.MarkerImage("https://lh4.ggpht.com/Tr5sntMif9qOPrKV_UVl7K8A_V3xQDgA7Sw_qweLUFlg76d_vGFA7q1xIKZ6IcmeGqg=w300", null, null, null, new google.maps.Size(50, 50));
             putMarkerListener(dados, conteudo, icone);
 
+            // Exibir as médias no mapa:
             obterMediasMapa().then(function () {
                 utilsFactory.hideLoading();
             }, function (error) {
@@ -314,24 +358,30 @@ angular.module('starter.controllers', [])
         return $q(function (resolve, reject) {
             var database = firebase.database();
             var baresRef = database.ref('bares');
+            var detalhesRef = database.ref('detalhes');
 
-            baresRef.once('value').then(function (bares) {
-                bares.forEach(function (bar) {
-                    var media = angular.isDefined(bar.val().media) ? bar.val().media : 'Sem Média;';
-                    var conteudo =
-                            '<div id="content">' +
-                            '<div id="headerContent">' +
-                            '<h3>' + bar.val().nome + '</h3>' +
-                            '<h4>' + bar.val().logradouro + ', ' + bar.val().numero + '</h4>' +
-                            '</div>' +
-                            '<div id="bodyContent">' +
-                            'Média: ' + media +
-                            '</div>' +
-                            '</div>';
-                    var dados = {position: {lat: bar.val().lat, lng: bar.val().lng}, map: $scope.map, title: bar.val().nome};
-                    putMarkerListener(dados, conteudo);
+            detalhesRef.once('value').then(function (detalhes) {
+                baresRef.once('value').then(function (bares) {
+                    bares.forEach(function (bar) {
+                        var media = angular.isDefined(bar.val().media) ? bar.val().media : 'Sem Média;';
+                        var conteudo =
+                                '<div id="content">' +
+                                '<div id="headerContent">' +
+                                '<h3>' + bar.val().nome + '</h3>' +
+                                '<h4>' + bar.val().logradouro + ', ' + bar.val().numero + '</h4>' +
+                                '</div>' +
+                                '<div id="bodyContent">' +
+                                'Média: ' + media + '<br />' +
+                                'Principal Avaliação: <b>' + detalhes.val()[bar.val().detalhe] + '</b>' +
+                                '</div>' +
+                                '</div>';
+                        var dados = {position: {lat: bar.val().lat, lng: bar.val().lng}, map: $scope.map, title: bar.val().nome};
+                        putMarkerListener(dados, conteudo);
+                    });
+                    resolve();
+                }, function (error) {
+                    reject(error);
                 });
-                resolve();
             }, function (error) {
                 reject(error);
             });
