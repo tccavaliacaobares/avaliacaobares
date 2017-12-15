@@ -137,26 +137,29 @@ angular.module('starter.controllers', [])
             bar.bairro = $scope.endereco.bairro;
             bar.cidade = $scope.endereco.cidade;
 
-            utilsFactory.showLoading();
-
             // Obter as coordenadas do endereço:
             mapsFactory.obterCoordenadas($scope.endereco).then(function (coordenadas) {
                 if (angular.isDefined(coordenadas.data.results[0])) {
+                    utilsFactory.showLoading();
+
                     bar.lat = coordenadas.data.results[0].geometry.location.lat;
                     bar.lng = coordenadas.data.results[0].geometry.location.lng;
-                }
 
-                // Cadastrar o Bar:
-                baresRef.push(bar).then(function () {
-                    $ionicHistory.nextViewOptions({historyRoot: true});
-                    $state.go('app.principal');
-                    utilsFactory.hideLoading();
-                    utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
-                }, function (error) {
-                    utilsFactory.hideLoading();
-                    utilsFactory.showAlert(error.code, error.message)
-                    console.error(error);
-                });
+                    // Cadastrar o Bar:
+                    baresRef.push(bar).then(function () {
+                        $ionicHistory.nextViewOptions({historyRoot: true});
+                        $state.go('app.principal');
+                        utilsFactory.hideLoading();
+                        utilsFactory.showAlert("success/push", "Bar cadastrado com sucesso! Nome: <b>" + bar.nome + "</b>; Coordenadas: <b>" + bar.lat + "</b>, <b>" + bar.lng + "</b>;");
+                    }, function (error) {
+                        utilsFactory.hideLoading();
+                        utilsFactory.showAlert(error.code, error.message)
+                        console.error(error);
+                    });
+
+                } else {
+                    utilsFactory.showAlert('validation/push', 'Não foi possível obter as coordenadas com os dados informados. Verifique o endereço digitado e tente novamente.');
+                }
             }, function (error) {
                 utilsFactory.hideLoading();
                 utilsFactory.showAlert(error.code, error.message)
